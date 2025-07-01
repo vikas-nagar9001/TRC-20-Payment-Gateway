@@ -1,0 +1,110 @@
+// when we call this api for trx  or any native coin on trc20 transaction
+
+// https://api.trongrid.io/wallet/gettransactionbyid
+
+// we get a response like this
+{
+    "ret": [
+        {
+            "contractRet": "SUCCESS"
+        }
+    ],
+    "signature": [
+        "318a168653bcfad326aec59f47244b993877fcf86b958f2ccf0703b0f0f78bcd4c15adfc8513b69dd0080554757016c6d981da7bed3286f503b7210680f43abc01"
+    ],
+    "txID": "6adc5b544de4dc0f7ba94b5c0a10004aeb7359a517f2fe409445b24f89419b02",
+    "raw_data": {
+        "contract": [
+            {
+                "parameter": {
+                    "value": {
+                        "amount": 30000000,
+                        "owner_address": "4119ffc904ab2e54fa4f54ffdb1cafd89a44170044",
+                        "to_address": "415b84403715b218b869b2e008117a1bbda850e726"
+                    },
+                    "type_url": "type.googleapis.com/protocol.TransferContract"
+                },
+                "type": "TransferContract"
+            }
+        ],
+        "ref_block_bytes": "edc8",
+        "ref_block_hash": "130f70b0c59f4871",
+        "expiration": 1751041604622,
+        "fee_limit": 15000000,
+        "timestamp": 1751041488000
+    },
+    "raw_data_hex": "0a02edc82208130f70b0c59f4871408ef8d991fb325a68080112640a2d747970652e676f6f676c65617069732e636f6d2f70726f746f636f6c2e5472616e73666572436f6e747261637412330a154119ffc904ab2e54fa4f54ffdb1cafd89a441700441215415b84403715b218b869b2e008117a1bbda850e726188087a70e7080e9d291fb329001c0c39307"
+}
+
+// ::::::::::::::::::::::::::::::::::::::::::::::start token trans:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+// when we call this api for usdt  or any token on trc20 transaction
+
+// https://api.trongrid.io/wallet/gettransactionbyid
+
+// we get a response like this
+
+
+
+{
+    "ret": [
+        {
+            "contractRet": "SUCCESS"
+        }
+    ],
+    "signature": [
+        "4bd57947ce504df9efb7c39035acd28daf7c3067c019ae0ff7d31db72dfa46fb7322ef28fddbe90115d6030d1995dc573498acf939fb815bb8a43c90285d421201"
+    ],
+    "txID": "f591b0c60730941e5a5fa09ded29993bbaab45ec91bef1a95fb6698876eb4729",
+    "raw_data": {
+        "contract": [
+            {
+                "parameter": {
+                    "value": {
+                        "data": "a9059cbb000000000000000000000000cb5f8073cedbb40ee156a6e5dc945c5cac067648000000000000000000000000000000000000000000000000000000000632ea00",
+                        "owner_address": "41c53a7d3488cd47d41e72aeecd311efb4d64afb64",
+                        "contract_address": "41a614f803b6fd780986a42c78ec9c7f77e6ded13c"
+                    },
+                    "type_url": "type.googleapis.com/protocol.TriggerSmartContract"
+                },
+                "type": "TriggerSmartContract"
+            }
+        ],
+        "ref_block_bytes": "3921",
+        "ref_block_hash": "412eb04792ea9688",
+        "expiration": 1751296149000,
+        "fee_limit": 100000000,
+        "timestamp": 1751296090669
+    },
+    "raw_data_hex": "0a0239212208412eb04792ea968840888c8a8bfc325aae01081f12a9010a31747970652e676f6f676c65617069732e636f6d2f70726f746f636f6c2e54726967676572536d617274436f6e747261637412740a1541c53a7d3488cd47d41e72aeecd311efb4d64afb64121541a614f803b6fd780986a42c78ec9c7f77e6ded13c2244a9059cbb000000000000000000000000cb5f8073cedbb40ee156a6e5dc945c5cac067648000000000000000000000000000000000000000000000000000000000632ea0070adc4868bfc32900180c2d72f"
+}
+
+
+// we have to decode the data field in the response to get the token transfer details 
+// 
+// function decodeTRC20Data(data) {
+//     if (!data.startsWith('a9059cbb')) {
+//         throw new Error('Not a standard TRC20 transfer function');
+//     }
+
+//     const method = data.slice(0, 8); // 'a9059cbb'
+//     const toHex = data.slice(8, 72); // 64 characters for address
+//     const amountHex = data.slice(72); // remaining 64 characters for amount
+
+//     // Extract recipient address (last 40 hex chars = 20 bytes)
+//     const toAddress = '41' + toHex.slice(24); // TRON addresses are 21 bytes and start with '41'
+
+//     // Convert hex to decimal amount
+//     const amount = BigInt('0x' + amountHex).toString(); // result is in smallest unit
+
+//     return {
+//         method,
+//         toAddress,
+//         amount
+//     };
+// }
+
+// or decode any other way if the above one doesnt work or fix if any issue 
+
+
+// :::::::::::::::::::::::::::::::::::::::finish token trans::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::

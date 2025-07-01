@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRC-20 Payment Gateway</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            margin: 0;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            max-width: 420px;
+            width: 100%;
+            margin: 10px auto;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+            color: white;
+            padding: 20px 15px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 22px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+            margin: 0;
+        }
+
+        .content {
+            padding: 20px 15px;
+        }
+
+        h2 {
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        h3 {
+            font-size: 16px;
+            margin-bottom: 10px;
+            margin-top: 15px;
+            color: #495057;
+        }
+
+        .step {
+            display: none;
+        }
+
+        .step.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.3s;
+            margin-top: 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn.success-btn {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            margin-top: 20px;
+            font-size: 18px;
+            padding: 18px;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
+        }
+
+        .btn.success-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(40, 167, 69, 0.4);
+        }
+
+        .payment-details {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .qr-code {
+            margin: 10px 0;
+        }
+
+        .qr-code img {
+            max-width: 160px;
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .address-display {
+            background: white;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #495057;
+            line-height: 1.3;
+        }
+
+        .copy-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        .timer {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
+            text-align: center;
+            font-weight: 600;
+            color: #856404;
+            font-size: 14px;
+        }
+
+        .network-warning {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            border: 2px solid #dc3545;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            color: white;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+            animation: warningPulse 2s infinite;
+        }
+
+        @keyframes warningPulse {
+            0% { box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3); }
+            50% { box-shadow: 0 6px 20px rgba(220, 53, 69, 0.5); }
+            100% { box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3); }
+        }
+
+        .network-warning-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .network-warning-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .network-warning-text {
+            font-size: 14px;
+            line-height: 1.4;
+            margin-bottom: 8px;
+        }
+
+        .network-warning-note {
+            font-size: 12px;
+            opacity: 0.9;
+            font-style: italic;
+        }
+
+        .success-message {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            border: 2px solid #28a745;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            color: #155724;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(40, 167, 69, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .success-message::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transform: rotate(45deg);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+
+        .success-icon {
+            font-size: 40px;
+            color: #28a745;
+            margin-bottom: 10px;
+            animation: bounceIn 0.8s ease;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes confetti {
+            0% { transform: rotateZ(15deg) rotateY(0deg) translate(0, 0); }
+            25% { transform: rotateZ(5deg) rotateY(360deg) translate(-5px, 0); }
+            50% { transform: rotateZ(15deg) rotateY(720deg) translate(5px, 0); }
+            75% { transform: rotateZ(5deg) rotateY(1080deg) translate(-3px, 0); }
+            100% { transform: rotateZ(15deg) rotateY(1440deg) translate(0, 0); }
+        }
+
+        .confetti {
+            position: fixed;
+            top: -10px;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 9999;
+        }
+
+        .confetti-piece {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #f0c419;
+            animation: confetti 3s ease-in-out infinite;
+        }
+
+        .confetti-piece:nth-child(1) { left: 10%; animation-delay: 0s; background: #f0c419; }
+        .confetti-piece:nth-child(2) { left: 20%; animation-delay: 0.3s; background: #e74c3c; }
+        .confetti-piece:nth-child(3) { left: 30%; animation-delay: 0.6s; background: #2ecc71; }
+        .confetti-piece:nth-child(4) { left: 40%; animation-delay: 0.9s; background: #3498db; }
+        .confetti-piece:nth-child(5) { left: 50%; animation-delay: 1.2s; background: #9b59b6; }
+        .confetti-piece:nth-child(6) { left: 60%; animation-delay: 1.5s; background: #e67e22; }
+        .confetti-piece:nth-child(7) { left: 70%; animation-delay: 1.8s; background: #1abc9c; }
+        .confetti-piece:nth-child(8) { left: 80%; animation-delay: 2.1s; background: #34495e; }
+        .confetti-piece:nth-child(9) { left: 90%; animation-delay: 2.4s; background: #f39c12; }
+
+        .success-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #155724;
+        }
+
+        .success-subtitle {
+            font-size: 14px;
+            opacity: 0.8;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            color: #721c24;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 15px;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .transaction-details {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 2px solid #dee2e6;
+            border-radius: 15px;
+            padding: 15px;
+            margin: 15px 0;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .transaction-header {
+            text-align: center;
+            margin-bottom: 15px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .transaction-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 4px;
+        }
+
+        .transaction-subtitle {
+            font-size: 12px;
+            color: #6c757d;
+            line-height: 1.3;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px 10px;
+            background: white;
+            border-radius: 8px;
+            border-left: 3px solid #007bff;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s ease;
+        }
+
+        .detail-row:hover {
+            transform: translateX(3px);
+        }
+
+        .detail-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #495057;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .detail-label::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: #007bff;
+            border-radius: 50%;
+        }
+
+        .detail-value {
+            color: #212529;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            background: #f8f9fa;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            text-align: right;
+        }
+
+        .amount-highlight {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            font-weight: 700;
+            font-size: 14px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            box-shadow: 0 3px 12px rgba(40, 167, 69, 0.3);
+        }
+
+        .copy-detail-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 9px;
+            cursor: pointer;
+            margin-left: 6px;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .copy-detail-btn:hover {
+            opacity: 1;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 11px;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+        }
+
+        .status-badge::before {
+            content: '✓';
+            background: white;
+            color: #28a745;
+            border-radius: 50%;
+            width: 14px;
+            height: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            font-weight: bold;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 5px;
+            }
+            
+            .container {
+                margin: 5px;
+                border-radius: 10px;
+            }
+            
+            .header {
+                padding: 15px 10px;
+            }
+            
+            .content {
+                padding: 15px 10px;
+            }
+            
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .header p {
+                font-size: 13px;
+            }
+
+            .qr-code img {
+                max-width: 140px;
+            }
+
+            .address-display {
+                font-size: 11px;
+                padding: 8px;
+            }
+
+            .detail-value {
+                max-width: 120px;
+                font-size: 10px;
+            }
+
+            .detail-label {
+                font-size: 11px;
+            }
+
+            .success-title {
+                font-size: 20px;
+            }
+
+            .success-subtitle {
+                font-size: 13px;
+            }
+
+            .btn {
+                padding: 10px;
+                font-size: 14px;
+            }
+
+            .network-warning {
+                padding: 12px;
+                margin: 10px 0;
+            }
+
+            .network-warning-title {
+                font-size: 14px;
+            }
+
+            .network-warning-text {
+                font-size: 13px;
+            }
+
+            .network-warning-note {
+                font-size: 11px;
+            }
+        }
+
+        /* Extra small screens */
+        @media (max-width: 320px) {
+            .header h1 {
+                font-size: 18px;
+            }
+
+            .qr-code img {
+                max-width: 120px;
+            }
+
+            .detail-value {
+                max-width: 100px;
+                font-size: 9px;
+            }
+
+            .container {
+                margin: 2px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💸 TRC-20 Payment Gateway</h1>
+            <p>Secure TRON blockchain payments</p>
+        </div>
+
+        <div class="content">
+            <!-- Step 1: Create Payment Request -->
+            <div class="step active" id="step1">
+                <h2>💰 Create Payment Request</h2>
+                
+                <!-- Network Information -->
+                <div style="background: #e3f2fd; border: 1px solid #2196f3; border-radius: 8px; padding: 12px; margin-bottom: 15px; text-align: center;">
+                    <div style="font-weight: 600; color: #1565c0; margin-bottom: 5px;">🌐 TRON Network (TRC-20)</div>
+                    <div style="font-size: 12px; color: #1976d2;">Fast, low-cost blockchain transactions</div>
+                </div>
+                
+                <form id="paymentForm">
+                    <div class="form-group">
+                        <label for="amount">Amount</label>
+                        <input type="number" id="amount" name="amount" step="0.000001" min="0.000001" 
+                               placeholder="Enter amount (e.g., 10.5)" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tokenType">Token Type</label>
+                        <select id="tokenType" name="tokenType" required>
+                            <option value="USDT">USDT (TRC-20)</option>
+                            <option value="TRX">TRX (Native)</option>
+                            <option value="USDC">USDC (TRC-20)</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn" id="createBtn">Create Payment Request</button>
+                </form>
+            </div>
+
+            <!-- Step 2: Show Payment Details -->
+            <div class="step" id="step2">
+                <h2>📱 Payment Details</h2>
+                
+                <!-- Network Warning -->
+                <div class="network-warning">
+                    <span class="network-warning-icon">⚠️</span>
+                    <div class="network-warning-title">Important: TRC-20 Network Only!</div>
+                    <div class="network-warning-text">
+                        ⚡ Use TRON (TRC-20) network only<br>
+                        ❌ Do NOT use other networks (ERC-20, BEP-20, etc.)
+                    </div>
+                    <div class="network-warning-note">
+                        Using wrong network will result in permanent loss of funds!
+                    </div>
+                </div>
+                
+                <div class="payment-details">
+                    <div class="qr-code">
+                        <img id="qrCodeImage" src="" alt="Payment QR Code">
+                    </div>
+                    
+                    <h3>Send <span id="displayAmount"></span> <span id="displayToken"></span></h3>
+                    <p>to the address below:</p>
+                    
+                    <div class="address-display" id="paymentAddress">
+                        TJK6vTviYJ468yfUC3vGzRoZtSvY72rYbM
+                    </div>
+                    
+                    <button class="copy-btn" id="copyAddressBtn">📋 Copy Address</button>
+                    
+                    <div class="timer" id="timer">
+                        ⏰ Time remaining: <span id="timeRemaining">30:00</span>
+                    </div>
+                </div>
+
+                <h3>🔍 Verify Your Payment</h3>
+                
+                <!-- Pre-verification checklist -->
+                <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 12px; margin-bottom: 15px;">
+                    <div style="font-weight: 600; color: #495057; margin-bottom: 8px; font-size: 14px;">✅ Before verification, confirm:</div>
+                    <div style="font-size: 12px; color: #6c757d; line-height: 1.4;">
+                        • Used TRON (TRC-20) network<br>
+                        • Sent exact amount shown above<br>
+                        • Transaction shows as confirmed<br>
+                        • Have your transaction ID ready
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="txid">Transaction ID (TXID)</label>
+                    <input type="text" id="txid" placeholder="Enter your transaction ID" required>
+                </div>
+                
+                <button class="btn" id="verifyBtn">Verify Payment</button>
+                <button class="btn" id="startOverBtn1" style="background: #6c757d; margin-top: 10px;">Start Over</button>
+            </div>
+
+            <!-- Step 3: Loading -->
+            <div class="step" id="step3">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <h3>🔄 Verifying Transaction...</h3>
+                    <p>Please wait while we verify your payment on the TRON blockchain.</p>
+                </div>
+            </div>
+
+            <!-- Step 4: Success -->
+            <div class="step" id="step4">
+                <div class="success-message">
+                    <div class="success-icon">🎉</div>
+                    <h2 class="success-title">Payment Confirmed!</h2>
+                    <p class="success-subtitle">Your transaction has been successfully verified and recorded on the blockchain.</p>
+                    <div class="status-badge">
+                        Verified & Secured
+                    </div>
+                </div>
+                
+                <div class="transaction-details" id="transactionDetails">
+                    <div class="transaction-header">
+                        <h3 class="transaction-title">📋 Transaction Details</h3>
+                        <p class="transaction-subtitle">All information has been verified on the TRON blockchain</p>
+                    </div>
+                    <!-- Transaction details will be populated here -->
+                </div>
+                
+                <button class="btn success-btn" id="makeAnotherPaymentBtn">🚀 Make Another Payment</button>
+            </div>
+
+            <!-- Step 5: Error -->
+            <div class="step" id="step5">
+                <div class="error-message">
+                    <h2>❌ Payment Verification Failed</h2>
+                    <p id="errorMessage">Please check your transaction details and try again.</p>
+                </div>
+                
+                <button class="btn" id="tryAgainBtn">Try Again</button>
+                <button class="btn" id="startOverBtn2" style="background: #6c757d; margin-top: 10px;">Start Over</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentRequestId = null;
+        let timerInterval = null;
+        let expirationTime = null;
+
+        // API Base URL
+        const API_BASE = '/api/payment';
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSupportedTokens();
+            
+            // Handle form submission
+            document.getElementById('paymentForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                createPaymentRequest();
+            });
+
+            // Add event listeners for buttons
+            document.getElementById('copyAddressBtn').addEventListener('click', copyAddress);
+            document.getElementById('verifyBtn').addEventListener('click', verifyPayment);
+            document.getElementById('startOverBtn1').addEventListener('click', startOver);
+            document.getElementById('makeAnotherPaymentBtn').addEventListener('click', startOver);
+            document.getElementById('tryAgainBtn').addEventListener('click', goBack);
+            document.getElementById('startOverBtn2').addEventListener('click', startOver);
+        });
+
+        // Load supported tokens
+        async function loadSupportedTokens() {
+            try {
+                const response = await fetch(`${API_BASE}/tokens`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    const select = document.getElementById('tokenType');
+                    select.innerHTML = '';
+                    
+                    result.data.forEach(token => {
+                        const option = document.createElement('option');
+                        option.value = token.symbol;
+                        option.textContent = `${token.symbol} - ${token.name}`;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading tokens:', error);
+            }
+        }
+
+        // Create payment request
+        async function createPaymentRequest() {
+            const amount = document.getElementById('amount').value;
+            const tokenType = document.getElementById('tokenType').value;
+            
+            if (!amount || parseFloat(amount) <= 0) {
+                alert('Please enter a valid amount');
+                return;
+            }
+
+            const createBtn = document.getElementById('createBtn');
+            createBtn.disabled = true;
+            createBtn.textContent = 'Creating...';
+
+            try {
+                const response = await fetch(`${API_BASE}/create`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ amount, tokenType })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    currentRequestId = result.data.requestId;
+                    displayPaymentDetails(result.data);
+                    showStep(2);
+                    startTimer(result.data.expiresAt);
+                } else {
+                    alert('Error creating payment request: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to create payment request. Please try again.');
+            } finally {
+                createBtn.disabled = false;
+                createBtn.textContent = 'Create Payment Request';
+            }
+        }
+
+        // Display payment details
+        function displayPaymentDetails(data) {
+            document.getElementById('qrCodeImage').src = data.qrCodeImage;
+            document.getElementById('displayAmount').textContent = data.amount;
+            document.getElementById('displayToken').textContent = data.tokenType;
+            document.getElementById('paymentAddress').textContent = data.gatewayAddress;
+        }
+
+        // Start countdown timer
+        function startTimer(expiresAt) {
+            expirationTime = new Date(expiresAt);
+            
+            timerInterval = setInterval(() => {
+                const now = new Date();
+                const timeLeft = expirationTime - now;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    document.getElementById('timeRemaining').textContent = '00:00';
+                    document.getElementById('timer').innerHTML = '⏰ <strong>Payment request expired</strong>';
+                    document.getElementById('verifyBtn').disabled = true;
+                    return;
+                }
+                
+                const minutes = Math.floor(timeLeft / 60000);
+                const seconds = Math.floor((timeLeft % 60000) / 1000);
+                document.getElementById('timeRemaining').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        // Copy address to clipboard
+        function copyAddress() {
+            const address = document.getElementById('paymentAddress').textContent;
+            navigator.clipboard.writeText(address).then(() => {
+                const btn = document.getElementById('copyAddressBtn');
+                const originalText = btn.textContent;
+                btn.textContent = '✅ Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            }).catch(() => {
+                alert('Failed to copy address. Please select and copy manually.');
+            });
+        }
+
+        // Copy any text to clipboard (for transaction details)
+        function copyToClipboard(text, button) {
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = button.textContent;
+                button.textContent = '✅';
+                button.style.background = '#28a745';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.background = '#6c757d';
+                }, 2000);
+            }).catch(() => {
+                alert('Failed to copy. Please select and copy manually.');
+            });
+        }
+
+        // Trigger confetti effect
+        function triggerConfetti() {
+            const confettiContainer = document.createElement('div');
+            confettiContainer.className = 'confetti';
+            
+            for (let i = 0; i < 9; i++) {
+                const piece = document.createElement('div');
+                piece.className = 'confetti-piece';
+                confettiContainer.appendChild(piece);
+            }
+            
+            document.body.appendChild(confettiContainer);
+            
+            // Remove confetti after 3 seconds
+            setTimeout(() => {
+                if (confettiContainer.parentNode) {
+                    confettiContainer.parentNode.removeChild(confettiContainer);
+                }
+            }, 3000);
+        }
+
+        // Verify payment
+        async function verifyPayment() {
+            const txid = document.getElementById('txid').value.trim();
+            
+            if (!txid) {
+                alert('Please enter a transaction ID');
+                return;
+            }
+
+            if (txid.length !== 64) {
+                alert('Invalid transaction ID format');
+                return;
+            }
+
+            showStep(3); // Show loading
+
+            try {
+                const response = await fetch(`${API_BASE}/verify`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        txid: txid,
+                        requestId: currentRequestId 
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    displayTransactionDetails(result.transaction);
+                    showStep(4); // Show success
+                    clearInterval(timerInterval);
+                    triggerConfetti(); // Add confetti effect
+                } else {
+                    document.getElementById('errorMessage').textContent = result.error;
+                    showStep(5); // Show error
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('errorMessage').textContent = 'Network error. Please try again.';
+                showStep(5);
+            }
+        }
+
+        // Display transaction details
+        function displayTransactionDetails(transaction) {
+            const container = document.getElementById('transactionDetails');
+            
+            // Get token symbol and add appropriate emoji
+            const tokenEmoji = {
+                'TRX': '🔴',
+                'USDT': '💵',
+                'USDC': '🔵',
+                'OTHER': '🪙'
+            };
+            
+            const formatAddress = (address) => {
+                return `${address.substring(0, 8)}...${address.substring(address.length - 8)}`;
+            };
+            
+            const formatTxId = (txid) => {
+                return `${txid.substring(0, 12)}...${txid.substring(txid.length - 12)}`;
+            };
+            
+            container.innerHTML = `
+                <div class="transaction-header">
+                    <h3 class="transaction-title">📋 Transaction Details</h3>
+                    <p class="transaction-subtitle">All information has been verified on the TRON blockchain</p>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="detail-label">💰 Amount</span>
+                    <span class="detail-value amount-highlight">${transaction.amount} ${tokenEmoji[transaction.tokenType] || '🪙'} ${transaction.tokenType}</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="detail-label">📄 Transaction ID</span>
+                    <span class="detail-value" title="${transaction.txid}">
+                        ${formatTxId(transaction.txid)}
+                        <button class="copy-detail-btn" onclick="copyToClipboard('${transaction.txid}', this)">📋</button>
+                    </span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="detail-label">📤 From Address</span>
+                    <span class="detail-value" title="${transaction.fromAddress}">
+                        ${formatAddress(transaction.fromAddress)}
+                        <button class="copy-detail-btn" onclick="copyToClipboard('${transaction.fromAddress}', this)">📋</button>
+                    </span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="detail-label">📥 To Address</span>
+                    <span class="detail-value" title="${transaction.toAddress}">
+                        ${formatAddress(transaction.toAddress)}
+                        <button class="copy-detail-btn" onclick="copyToClipboard('${transaction.toAddress}', this)">📋</button>
+                    </span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="detail-label">⏰ Verified At</span>
+                    <span class="detail-value">${new Date(transaction.timestamp).toLocaleString()}</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="detail-label">🌐 Network</span>
+                    <span class="detail-value">TRON Mainnet</span>
+                </div>
+            `;
+        }
+
+        // Navigation functions
+        function showStep(stepNumber) {
+            document.querySelectorAll('.step').forEach(step => {
+                step.classList.remove('active');
+            });
+            document.getElementById(`step${stepNumber}`).classList.add('active');
+        }
+
+        function startOver() {
+            currentRequestId = null;
+            clearInterval(timerInterval);
+            document.getElementById('paymentForm').reset();
+            document.getElementById('txid').value = '';
+            showStep(1);
+        }
+
+        function goBack() {
+            showStep(2);
+        }
+    </script>
+</body>
+</html>
