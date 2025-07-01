@@ -750,6 +750,7 @@
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             loadSupportedTokens();
+            restoreUserState(); // Restore state after page refresh
             
             // Handle form submission
             document.getElementById('paymentForm').addEventListener('submit', function(e) {
@@ -838,12 +839,12 @@
             document.getElementById('paymentAddress').textContent = data.gatewayAddress;
         }
 
-        // Start countdown timer
-        function startTimer(expiresAt) {
-            expirationTime = new Date(expiresAt);
+        // Start countdown timer from existing timestamp (for state restoration)
+        function startTimerFromTimestamp() {
+            if (!expirationTime) return;
             
             timerInterval = setInterval(() => {
-                const now = new Date();
+                const now = Date.now();
                 const timeLeft = expirationTime - now;
                 
                 if (timeLeft <= 0) {
@@ -859,6 +860,33 @@
                 document.getElementById('timeRemaining').textContent = 
                     `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             }, 1000);
+        }
+
+        // Start countdown timer
+        function startTimer(expiresAt) {
+            expirationTime = new Date(expiresAt).getTime(); // Store as timestamp
+            
+            timerInterval = setInterval(() => {
+                const now = Date.now();
+                const timeLeft = expirationTime - now;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    document.getElementById('timeRemaining').textContent = '00:00';
+                    document.getElementById('timer').innerHTML = '⏰ <strong>Payment request expired</strong>';
+                    document.getElementById('verifyBtn').disabled = true;
+                    saveUserState(); // Save state when expired
+                    return;
+                }
+                
+                const minutes = Math.floor(timeLeft / 60000);
+                const seconds = Math.floor((timeLeft % 60000) / 1000);
+                document.getElementById('timeRemaining').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+            
+            // Save state after starting timer
+            setTimeout(saveUserState, 100);
         }
 
         // Copy address to clipboard
@@ -947,6 +975,8 @@
                     showStep(4); // Show success
                     clearInterval(timerInterval);
                     triggerConfetti(); // Add confetti effect
+                    // Clear state after successful completion
+                    setTimeout(() => clearUserState(), 1000);
                 } else {
                     document.getElementById('errorMessage').textContent = result.error;
                     showStep(5); // Show error
@@ -1025,19 +1055,114 @@
             `;
         }
 
+        // State management functions
+        function saveUserState() {
+            const state = {
+                currentStep: getCurrentStep(),
+                currentRequestId: currentRequestId,
+                formData: {
+                    amount: document.getElementById('amount').value,
+                    tokenType: document.getElementById('tokenType').value,
+                    txid: document.getElementById('txid').value
+                },
+                paymentDetails: currentRequestId ? {
+                    address: document.getElementById('paymentAddress') ? document.getElementById('paymentAddress').textContent : null,
+                    amount: document.getElementById('displayAmount') ? document.getElementById('displayAmount').textContent : null
+                } : null,
+                expirationTime: expirationTime,
+                timestamp: Date.now()
+            };
+            
+            // Only save if we're not on step 1 (home page)
+            if (state.currentStep > 1) {
+                sessionStorage.setItem('paymentGatewayState', JSON.stringify(state));
+            }
+        }
+
+        function restoreUserState() {
+            try {
+                const savedState = sessionStorage.getItem('paymentGatewayState');
+                if (!savedState) return;
+
+                const state = JSON.parse(savedState);
+                
+                // Check if state is not too old (30 minutes)
+                const maxAge = 30 * 60 * 1000; // 30 minutes
+                if (Date.now() - state.timestamp > maxAge) {
+                    clearUserState();
+                    return;
+                }
+
+                // Restore form data
+                if (state.formData) {
+                    if (state.formData.amount) document.getElementById('amount').value = state.formData.amount;
+                    if (state.formData.tokenType) document.getElementById('tokenType').value = state.formData.tokenType;
+                    if (state.formData.txid) document.getElementById('txid').value = state.formData.txid;
+                }
+
+                // Restore current request ID and expiration
+                currentRequestId = state.currentRequestId;
+                expirationTime = state.expirationTime;
+
+                // Restore payment details if available
+                if (state.paymentDetails && state.currentStep === 2) {
+                    // We need to recreate the payment display since these elements are populated dynamically
+                    setTimeout(() => {
+                        if (state.paymentDetails.address && document.getElementById('paymentAddress')) {
+                            document.getElementById('paymentAddress').textContent = state.paymentDetails.address;
+                        }
+                        if (state.paymentDetails.amount && document.getElementById('displayAmount')) {
+                            document.getElementById('displayAmount').textContent = state.paymentDetails.amount;
+                        }
+                        
+                        // Restart timer if still valid
+                        if (expirationTime && expirationTime > Date.now()) {
+                            startTimerFromTimestamp();
+                        }
+                    }, 200);
+                }
+
+                // Restore current step
+                if (state.currentStep && state.currentStep > 1) {
+                    showStep(state.currentStep);
+                }
+
+            } catch (error) {
+                console.error('Error restoring state:', error);
+                clearUserState();
+            }
+        }
+
+        function clearUserState() {
+            sessionStorage.removeItem('paymentGatewayState');
+        }
+
+        function getCurrentStep() {
+            const activeStep = document.querySelector('.step.active');
+            if (activeStep) {
+                return parseInt(activeStep.id.replace('step', ''));
+            }
+            return 1; // Default to step 1
+        }
+
         // Navigation functions
         function showStep(stepNumber) {
             document.querySelectorAll('.step').forEach(step => {
                 step.classList.remove('active');
             });
             document.getElementById(`step${stepNumber}`).classList.add('active');
+            
+            // Save state after changing step
+            setTimeout(saveUserState, 100);
         }
 
         function startOver() {
             currentRequestId = null;
             clearInterval(timerInterval);
+            expirationTime = null;
             document.getElementById('paymentForm').reset();
             document.getElementById('txid').value = '';
+            clearUserState(); // Clear saved state
             showStep(1);
         }
 
