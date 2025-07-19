@@ -25,7 +25,7 @@ A secure and user-friendly payment gateway for accepting TRC-20 tokens (USDT, TR
 
 1. **Clone or download the project:**
    ```powershell
-   cd c:\Users\vikas\Documents\Crytpo
+   git clone https://github.com/vikas-nagar9001/TRC-20-Payment-Gateway
    ```
 
 2. **Install dependencies:**
